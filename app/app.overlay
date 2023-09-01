@@ -1,0 +1,80 @@
+/* FRST Model 1/2 */
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+    aliases {
+        lora0 = &lora0;
+    };
+	chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+		zephyr,display = &epd;
+	};
+    spibb0: spibb0 {
+        compatible = "zephyr,spi-bitbang";
+        status="okay";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        clk-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+        mosi-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+        miso-gpios = <&gpio0 21 0>;
+        cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+
+        frontlight: ws2812@0 {
+            compatible = "worldsemi,ws2812-spi";
+            reg = <0>;
+            spi-max-frequency = <3250000>;
+            chain-length = <4>;
+            spi-one-frame = <0x40>;
+            spi-zero-frame = <0x70>;
+            color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
+        };
+    };
+};
+
+&pinctrl {
+    display_default: display_default {
+        group1 {
+            pinmux = <SPIM3_MISO_GPIO38>, <SPIM3_SCLK_GPIO5>, <SPIM3_CSEL_GPIO6>;
+        };
+        group2 {
+            pinmux = <SPIM3_MOSI_GPIO4>;
+            output-low;
+        };
+    };
+};
+
+&spi2 {
+     lora0: sx1262@0 {
+            reg = <0>;
+            compatible = "semtech,sx1262";
+            reset-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+            dio1-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+            busy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+            spi-max-frequency = <1000000>;
+     };
+};
+
+&spi3 {
+    pinctrl-0 = <&display_default>;
+    pinctrl-names = "default";
+
+	epd: uc8176@0 {
+		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <400>;
+		height = <300>;
+		dc-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+
+		softstart = [17 17 17];
+
+		full {
+			pwr = [03 00 26 26 09];
+			cdi = <0xd7>;
+			tcon = <0x22>;
+		};
+	};
+};
